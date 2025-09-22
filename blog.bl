@@ -23,7 +23,7 @@ main :: fn () s32 {
 	measure_elapsed_ms_begin();
 
 	SRC_DIR  :: "src";
-	SIDE_DIR :: "side";
+	SIDE_DIR :: "docs";
 
 	root_dir :: get_root_dir();
 
