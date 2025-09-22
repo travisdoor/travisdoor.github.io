@@ -59,7 +59,7 @@ After some time, I realized that a user-level solution to this problem is actual
 Since a tag number can be any arbitrary 64-bit number, what if it’s actually an index to a compile-time generated array of metadata? Wild idea? Let’s explore the possibilities we have. First, we need to allocate some memory in the binary data segment to hold metadata. Note that since all metadata is written into the executable, we must preallocate a large enough chunk of memory. This brings one limitation: we might run out of memory to store all the data we need, but since the amount of data required depends purely on our code, we might just invoke an assertion at compile time when it happens. Let’s start with metadata definition. We’ll store the `unit` of the value, and a simple valid range as the `min` and `max` values.
 
 ```bl
-Unit :: enum { MM; M; KM; }
+Unit :: enum { MM; CM; M; KM; }
 
 Meta :: struct {
 	used: bool;
