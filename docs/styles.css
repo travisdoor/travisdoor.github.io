@@ -176,24 +176,6 @@ pre code {
     font-family: monospace;
 }
 
-::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-}
-
-::-webkit-scrollbar-track {
-    background: black;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #303030;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #F8E43C;
-}
-
 #column1 {
     width: 20%;
 }
