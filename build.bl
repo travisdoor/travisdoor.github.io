@@ -1,0 +1,6 @@
+build :: fn () #build_entry {
+	target :: add_executable("blog");
+	set_module_dir(target, "modules");
+	add_unit(target, "blog.bl");
+	compile(target);
+}

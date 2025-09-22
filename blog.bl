@@ -1,0 +1,752 @@
+io :: #import "std/io";
+C  :: #import "libc";
+
+#import "std/fs"
+#import "md4c"
+#import "std/table"
+#import "std/string"
+#import "std/print"
+#import "std/array"
+
+Lang :: enum {
+	UNKNOWN;
+	BL;
+}
+
+include_file_cache: Table(u32, string);
+
+root_dir:   string;
+src_dir:    string;
+side_dir:   string;
+
+main :: fn () s32 {
+	measure_elapsed_ms_begin();
+
+	SRC_DIR  :: "src";
+	SIDE_DIR :: "side";
+
+	root_dir :: get_root_dir();
+
+	print_info("Running in: '%'", root_dir);
+
+	blc := "blc";
+	#if PLATFORM == Platform.WINDOWS {
+		blc = "blc.exe";
+	}
+
+	src_dir    = sprint("%/%", root_dir, SRC_DIR);
+	side_dir   = sprint("%/%", root_dir, SIDE_DIR);
+
+	src_files: [..]string_view;
+	list_dir(&src_files, src_dir);
+
+	main_menu: [..]MenuItem;
+	array_push(&main_menu, .{ id = "index.html", title = "Home", level = 1 });
+
+	loop i := 0; i < src_files.len; i += 1 {
+		page, _ :: path_splitext(slice_range(src_files[i], src_dir.len+1));
+		if str_match(page, "index") then continue;
+
+		content :: read_entire_file(src_files[i]) catch {
+			print_err($);
+			continue;
+		};
+
+		title: string_view;
+		if str_split_by_first(content, '\n', &title) && title.len > 2 {
+			if title[title.len-1] == '\r' then title.len -= 1;
+			title = slice_range(title, 2);
+		}
+
+		array_push(&main_menu, .{ id = tprint("%.html", page), title = title, level = 1 });
+	}
+
+	menu :: str_make(256);
+	generate_menu_entries(&menu, main_menu);
+
+	loop i := 0; i < src_files.len; i += 1 {
+		page, _ :: path_splitext(slice_range(src_files[i], src_dir.len+1));
+
+		err :: md2html(page, menu);
+		if err {
+			print_err(err);
+			return 1;
+		}
+	}
+
+	runtime :: measure_elapsed_ms_end("-");
+	print_info("Completed in %s.\n", fmt_real(runtime / 1000., 3));
+	return 0;
+}
+
+MenuItem :: struct {
+	id: string_view;
+	title: string_view;
+	level: s32;
+}
+
+Ctx :: struct {
+	output_file: string_view;
+	content: string;
+	current_code_block_lang: Lang;
+	inside_code_block: bool;
+	inside_hint_block: bool;
+	allocator: *Allocator;
+	on_this_page: [..]MenuItem;
+	current_header_level: s32;
+	fix_text_tmp: string;
+	table: struct {
+		col: s32;
+		col_num: s32;
+		is_header: bool;
+	};
+}
+
+md2html :: fn (name: string_view, menu: string_view) Error {
+	measure_elapsed_ms_begin();
+	allocator :: application_context.temporary_allocator;
+
+	in  :: tprint("%/%.md", src_dir, name);
+
+	tmp :: str_make(name, application_context.temporary_allocator);
+	str_replace_all(&tmp, '/', '_');
+
+	out :: tprint("%/%.html", side_dir, tmp);
+
+	ctx := Ctx.{
+		allocator = allocator,
+		current_header_level = -1,
+		output_file = tprint("%.html", tmp),
+	};
+
+	ctx.fix_text_tmp = str_make(1024, allocator);
+	ctx.table.col_num = -1;
+
+
+	array_init(&ctx.on_this_page, 64, allocator);
+	page_menu :: str_make(256, allocator);
+
+	{
+		file, file_err :: open_file(in, OpenFileMode.READ);
+		defer close_file(&file);
+		if file_err then return file_err;
+
+		data, read_err :: load_whole_file(&file, allocator);
+		if read_err then return read_err;
+
+		ctx.content = str_make(data.len * 2, allocator);
+
+		parser := MD_PARSER.{
+			flags = MD_FLAG_TABLES,
+			enter_block = auto &enter_block,
+			leave_block = auto &leave_block,
+			enter_span = auto &enter_span,
+			leave_span = auto &leave_span,
+			text = auto &text,
+			debug_log = &debug_log,
+		};
+
+		md_parse(auto data.ptr, auto data.len, &parser, auto &ctx);
+	}
+
+	generate_menu_entries(&page_menu, ctx.on_this_page);
+	generate_page(out, menu, ctx.content, page_menu);
+
+	runtime :: measure_elapsed_ms_end("-");
+	print_info("Converted '%' to '%' [%s]", in, out, fmt_real(runtime / 1000., 3));
+	return OK;
+}
+
+generate_page :: fn (filepath: string_view, menu: string_view, content: string_view, page_menu := "", scripts := "") Error {
+	file, file_err :: open_file(filepath, OpenFileMode.WRITE | OpenFileMode.CREATE);
+	defer close_file(&file);
+	if file_err then return file_err;
+
+	using io;
+	write_string(&file,
+		"<!DOCTYPE html>\n"
+		"<html lang=\"en\">\n"
+		"<head>\n"
+		"<meta charset=\"UTF-8\">\n"
+		"<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+		"<link rel=\"stylesheet\" href=\"styles.css\">\n"
+		"</head>\n"
+		"<body>\n"
+		"<div class=\"container\">\n"
+		"<div class=\"column\" id=\"column1\">\n"
+	);
+
+	write_string(&file, menu);
+
+	write_string(&file,
+		"</div>\n"
+		"<div class=\"column\" id=\"column2\">\n"
+	);
+
+	write_string(&file, content);
+
+	write_string(&file,
+		"</div>\n"
+		"<div class=\"column\" id=\"column3\">\n"
+	);
+
+	write_string(&file, page_menu);
+
+	write_string(&file,
+		"</div>\n"
+		"</div>\n"
+	);
+
+	if scripts.len > 0 then write_string(&file, scripts);
+
+	write_string(&file,
+		"</body>\n"
+		"</html>\n"
+	);
+
+	return OK;
+}
+
+generate_menu_entries :: fn (dest: *string, entries: []MenuItem) {
+	level := -1;
+	loop i := 0; i < entries.len; i += 1 {
+		item :: &entries[i];
+
+		if item.level < level && level != -1 then str_append(dest, "</ul>\n");
+		if item.level > level {
+			if item.level == 1 {
+				str_concat(dest, "<ul id=\"menu-top-level\">\n");
+			} else {
+				str_append(dest, "<ul>\n");
+			}
+		}
+		if item.level == 1 {
+			str_concat(dest, "<li id=\"menu-top-level-item\"><a href=\"", item.id, "\">", item.title, "</a></li>\n");
+		} else {
+			str_concat(dest, "<li><a href=\"", item.id, "\">", item.title, "</a></li>\n");
+		}
+		level = item.level;
+	}
+
+	loop level > 0 {
+		str_append(dest, "</ul>\n");
+		level -= 1;
+	}
+}
+
+// @Cleanup 2025-02-12: Can we use fs.read_entire_file?
+load_whole_file :: fn (stream: *io.Stream, allocator: *Allocator = null) (data: string, err: Error) {
+	using io;
+	using StreamLocator;
+
+	prev_location, err1  :: seek(stream, CURRENT);
+	if err1 then return .{}, err1;
+	defer seek(stream, CURRENT, prev_location);
+
+	_, err2 :: seek(stream, BEGIN);
+	if err2 then return .{}, err2;
+
+	size, err3 :: seek(stream, END);
+	if err3 then return .{}, err3;
+
+	_, err4 :: seek(stream, BEGIN);
+	if err4 then return .{}, err4;
+
+	data := str_make(size, allocator);
+	data.len = auto size;
+	err :: read_all(stream, data.ptr, size, 2048);
+
+	return data, err;
+}
+
+enter_block :: fn (kind: MD_BLOCKTYPE, detail: *C.void_ptr, ctx: *Ctx) C.int {
+	using MD_BLOCKTYPE;
+
+	switch kind {
+		MD_BLOCK_H {
+			h :: cast(*MD_BLOCK_H_DETAIL)detail;
+			str_concat(&ctx.content, "<h", h.level);
+			ctx.current_header_level = auto h.level;
+		}
+		MD_BLOCK_P { str_append(&ctx.content, "<p>"); }
+		MD_BLOCK_UL { str_append(&ctx.content, "<ul>\n"); }
+		MD_BLOCK_LI { str_append(&ctx.content, "<li>"); }
+		MD_BLOCK_CODE {
+			str_append(&ctx.content, "\n<pre><code>");
+			ctx.inside_code_block = true;
+			code :: cast(*MD_BLOCK_CODE_DETAIL)detail;
+			lang_name :: string_view.{ len = auto code.lang.size, ptr = auto code.lang.text };
+			if str_match(lang_name, "bl") {
+				ctx.current_code_block_lang = Lang.BL;
+			} else {
+				ctx.current_code_block_lang = Lang.UNKNOWN;
+			}
+		}
+		MD_BLOCK_TABLE {
+			table :: cast(*MD_BLOCK_TABLE_DETAIL)detail;
+			ctx.table.col_num = auto table.col_count;
+			ctx.table.col     = 0;
+			str_append(&ctx.content, "<table>\n");
+		}
+		MD_BLOCK_THEAD {
+			ctx.table.is_header = true;
+		}
+		MD_BLOCK_TBODY {
+			ctx.table.is_header = false;
+		}
+		default;
+	}
+	return 0;
+}
+
+leave_block :: fn (kind: MD_BLOCKTYPE, detail: *C.void_ptr, ctx: *Ctx) C.int {
+	using MD_BLOCKTYPE;
+
+	switch kind {
+		MD_BLOCK_H {
+			h :: cast(*MD_BLOCK_H_DETAIL)detail;
+			str_concat(&ctx.content, "</h", h.level, ">\n");
+			ctx.current_header_level = -1;
+		}
+		MD_BLOCK_P {
+			if ctx.inside_hint_block then str_append(&ctx.content, "</span>");
+			str_append(&ctx.content, "</p>\n");
+		}
+		MD_BLOCK_UL { str_append(&ctx.content, "</ul>\n"); }
+		MD_BLOCK_LI { str_append(&ctx.content, "</li>\n"); }
+		MD_BLOCK_CODE {
+			str_append(&ctx.content, "</code></pre>\n");
+			ctx.inside_code_block = false;
+		}
+		MD_BLOCK_TABLE {
+			ctx.table.col_num = -1;
+			str_append(&ctx.content, "</table>\n");
+		}
+		default;
+	}
+
+	ctx.inside_hint_block = false;
+
+	return 0;
+}
+
+enter_span :: fn (kind: MD_SPANTYPE, detail: *C.void_ptr, ctx: *Ctx) C.int {
+	using MD_SPANTYPE;
+
+	switch kind {
+		MD_SPAN_EM { str_append(&ctx.content, "<em>"); }
+		MD_SPAN_STRONG { str_append(&ctx.content, "<b>"); }
+		MD_SPAN_A {
+			a :: cast(*MD_SPAN_A_DETAIL)detail;
+			link :: string_view.{ auto a.href.size, auto a.href.text };
+			str_append(&ctx.content, "<a href=\"");
+			loop i := 0; i < link.len; i += 1 {
+				if link[i] == '$' {
+					i += 1;
+					key := string_view.{ 0, &link[i] };
+					loop ; i < link.len; i += 1 {
+						if link[i] == '$' then break;
+						key.len += 1;
+					}
+					continue;
+				}
+				str_append(&ctx.content, string_view.{ 1, &link[i] });
+			}
+
+			str_append(&ctx.content, "\">");
+		}
+		default;
+	}
+
+	return 0;
+}
+
+leave_span :: fn (kind: MD_SPANTYPE, _: *C.void_ptr, ctx: *Ctx) C.int {
+	using MD_SPANTYPE;
+
+	switch kind {
+		MD_SPAN_EM { str_append(&ctx.content, "</em>"); }
+		MD_SPAN_STRONG { str_append(&ctx.content, "</b>"); }
+		MD_SPAN_A { str_append(&ctx.content, "</a>"); }
+		default;
+	}
+
+	return 0;
+}
+
+text :: fn (kind: MD_TEXTTYPE, ptr: *MD_CHAR, len: MD_SIZE, ctx: *Ctx) C.int {
+	using MD_TEXTTYPE;
+
+	str := string_view.{ len = auto len, ptr = auto ptr };
+	str = fix_text(ctx, str);
+
+	switch kind {
+		MD_TEXT_CODE {
+			if ctx.inside_code_block {
+				if str_match(str, "@@@", auto "@@@".len) {
+					src, err :: include_file(str_sub(str, 3));
+					if err {
+						print_err(err);
+						str = "";
+					} else {
+						str = fix_text(ctx, src);
+					}
+				}
+
+				switch ctx.current_code_block_lang {
+					Lang.BL {
+						append_bl_code(ctx, str);
+					}
+					default {
+						str_append(&ctx.content, str);
+					}
+				}
+			} else {
+				str_concat(&ctx.content, "<code>", str, "</code>");
+			}
+		}
+		default {
+			if ctx.current_header_level != -1 {
+				id :: str_make(str, application_context.temporary_allocator);
+				str_replace_all(&id, ' ', '-');
+
+				if ctx.current_header_level < 3 {
+					array_push(&ctx.on_this_page, MenuItem.{
+							id    = tprint("#%", id),
+							title = tprint("%", str),
+							level = ctx.current_header_level,
+						});
+				}
+				str_concat(&ctx.content, " id=\"", id, "\">", str);
+			} else if ctx.table.col_num != -1 {
+				if ctx.table.col == ctx.table.col_num {
+					ctx.table.col = 0;
+					str_append(&ctx.content, "</tr>\n");
+				}
+				if ctx.table.col == 0 {
+					str_append(&ctx.content, "<tr>\n");
+				}
+				if ctx.table.is_header {
+					str_concat(&ctx.content, "<th>", str, "</th>\n");
+				} else {
+					str_concat(&ctx.content, "<td>", str, "</td>\n");
+				}
+				ctx.table.col += 1;
+			} else if str_match(str, "!!! todo", auto "!!! todo".len) {
+				ctx.inside_hint_block = true;
+				str_concat(&ctx.content, "<span class=\"hint-todo\"><b>TODO:</b>");
+			} else if str_match(str, "!!! note", auto "!!! note".len) {
+				ctx.inside_hint_block = true;
+				str_concat(&ctx.content, "<span class=\"hint-note\"><b>Note:</b>");
+			} else if str_match(str, "!!! warning", auto "!!! warning".len) {
+				ctx.inside_hint_block = true;
+				str_concat(&ctx.content, "<span class=\"hint-warning\"><b>Warning:</b>");
+			} else if str_match(str, "!!! important", auto "!!! important".len) {
+				ctx.inside_hint_block = true;
+				str_concat(&ctx.content, "<span class=\"hint-important\"><b>Important:</b>");
+			} else {
+				str_append(&ctx.content, str);
+			}
+		}
+	}
+	return 0;
+}
+
+debug_log :: fn (_: *C.char, _: *C.void_ptr) {}
+
+
+Tokenizer :: struct {
+	bytes: string_view;
+	index: s32;
+	dest: *string;
+}
+
+BL_KEYWORDS :: [_]string_view.{
+	"loop", "if", "switch", "continue", "else", "defer", "struct",
+	"enum", "union", "fn", "return", "cast", "auto", "default", "using", "break", "unreachable",
+	"panic", "assert", "sizeof", "alignof", "typeinfo", "compiler_error", "compiler_warning",
+	"typeof", "then", "catch"
+};
+
+BL_DIRECTIVES :: [_]string_view.{
+	"load", "enable_if", "call_location", "extern", "compiler",
+	"inline", "noinline", "file", "line", "base", "entry", "build_entry",
+	"if", "tag", "noinit", "intrinsic", "test", "import", "export",
+	"scope_private", "scope_public", "scope_module", "thread_local",
+	"flags", "maybe_unused", "comptime", "obsolete",
+};
+
+append_bl_code :: fn (ctx: *Ctx, code: string_view) {
+	tokenizer := Tokenizer.{
+		bytes =  code,
+		index =  0,
+		dest  = &ctx.content,
+	};
+
+	loop tokenizer.index < tokenizer.bytes.len {
+
+		if append_bl_comment(&tokenizer) then continue;
+		if append_bl_identifier_or_keyword(&tokenizer) then continue;
+		if append_bl_directive(&tokenizer) then continue;
+
+		c :: tokenizer.bytes[tokenizer.index];
+		sc :: string_view.{ 1, &c };
+
+		switch c {
+			'{', '}' {
+				str_concat(tokenizer.dest, "<span class=\"syntax-keyword\">", sc, "</span>");
+				tokenizer.index += 1;
+				continue;
+			}
+		}
+
+		str_append(&ctx.content, sc);
+		tokenizer.index += 1;
+	}
+}
+
+append_bl_comment :: fn (ctx: *Tokenizer) bool {
+	if ctx.bytes[ctx.index] != '/' then return false;
+
+	start_index := ctx.index;
+	ctx.index += 1;
+	len := 0;
+
+	c := ctx.bytes[ctx.index];
+	switch c {
+		'/' {
+			ctx.index += 1;
+			loop ctx.index < ctx.bytes.len {
+				c = ctx.bytes[ctx.index];
+				if c == '\n' || c == 0 { break; }
+				len       += 1;
+				ctx.index += 1;
+			}
+			len += 2; // '//'
+		}
+		'*' {
+			ctx.index += 1;
+			len       += 2;
+			loop ctx.index < ctx.bytes.len {
+				c = ctx.bytes[ctx.index];
+				if c == 0 { break; }
+				if c == '*' && ctx.index+1 < ctx.bytes.len && ctx.bytes[ctx.index+1] == '/' {
+					ctx.index += 2;
+					len += 2; // /**/
+					break;
+				}
+				len       += 1;
+				ctx.index += 1;
+			}
+		}
+		default {
+			ctx.index -= 1;
+			return false;
+		}
+	}
+
+	if len > 0 {
+		code :: string_view.{ len, &ctx.bytes[start_index] };
+		str_concat(ctx.dest, "<span class=\"syntax-comment\">", code, "</span>");
+	}
+
+	return true;
+}
+
+append_bl_identifier_or_keyword :: fn (ctx: *Tokenizer) bool {
+	start_index := ctx.index;
+	len := 0;
+
+	loop ctx.index < ctx.bytes.len {
+		c :: ctx.bytes[ctx.index];
+		if c == '_' || is_alpha(c) || (len > 0 && is_digit(c)) {
+			len       += 1;
+			ctx.index += 1;
+		} else {
+			break;
+		}
+	}
+
+	maybe_keyword :: string_view.{ len, &ctx.bytes[start_index] };
+
+	loop i := 0; i < BL_KEYWORDS.len; i += 1 {
+		keyword :: BL_KEYWORDS[i];
+		if str_match(maybe_keyword, keyword) {
+			str_concat(ctx.dest, "<span class=\"syntax-keyword\">", keyword, "</span>");
+			return true;
+		}
+	}
+
+	str_append(ctx.dest, maybe_keyword);
+	return maybe_keyword.len > 0;
+}
+
+append_bl_directive :: fn (ctx: *Tokenizer) bool {
+	if ctx.bytes[ctx.index] != '#' then return false;
+
+	start_index := ctx.index;
+	ctx.index += 1;
+	len := 1;
+
+	loop ctx.index < ctx.bytes.len {
+		c :: ctx.bytes[ctx.index];
+		if c != '_' && is_alpha(c) == false { break; }
+		len       += 1;
+		ctx.index += 1;
+	}
+
+	if len == 1 {
+		ctx.index -= 1;
+		len       -= 1;
+		return false;
+	}
+
+	maybe_directive :: string_view.{ len-1, &ctx.bytes[start_index+1] };
+
+	loop i := 0; i < BL_DIRECTIVES.len; i += 1 {
+		directive :: BL_DIRECTIVES[i];
+		if str_match(maybe_directive, directive) {
+			str_concat(ctx.dest, "<span class=\"syntax-directive\">#", maybe_directive, "</span>");
+			return true;
+		}
+	}
+
+	str_concat(ctx.dest, "#", maybe_directive);
+	return true;
+}
+
+fix_text :: fn (ctx: *Ctx, text: string_view) string_view {
+	result :: &ctx.fix_text_tmp;
+	result.len = 0;
+	loop i := 0; i < text.len; i += 1 {
+		if text[i] == '<'  { str_append(result, "&lt;"); continue; }
+		if text[i] == '>'  { str_append(result, "&gt;"); continue; }
+		if text[i] == '\r' { continue; }
+		tmp :: string_view.{ 1, &text[i] };
+		str_append(result, tmp);
+	}
+
+	return @result;
+}
+
+include_file :: fn (filepath: string_view) (content: string_view, err: Error) {
+	hash :: str_hash(filepath);
+
+	fullpath :: tprint("%/%", src_dir, filepath);
+	print_info("    Include file: '%'.", fullpath);
+
+	result := tbl_lookup_ptr(&include_file_cache, hash);
+	if result {
+		return @result, OK;
+	}
+
+	file, file_err :: open_file(fullpath, OpenFileMode.READ);
+	defer close_file(&file);
+
+	if file_err then return "", file_err;
+
+	data, read_err :: load_whole_file(&file);
+	if read_err then return "", read_err;
+
+	tbl_insert(&include_file_cache, hash, data);
+	return data, OK;
+}
+
+get_root_dir :: fn () string {
+	exec_path := os_get_exec_path();
+	exec_dir := path_split(exec_path);
+	if exec_dir.len > 0 && exec_dir[exec_dir.len-1] == '/' {
+		exec_dir.len -= 1;
+	}
+	if exec_dir.len == 0 {
+		panic("Unable to resolve the root directory of the editor executable.");
+	}
+	exec_path.len = exec_dir.len;
+	return exec_path;
+}
+
+get_blc_branch :: fn () string #inline {
+	branch_name, err :: cmd_read_stdout("git branch --show-current");
+	if err { print_err(err); return str_make("UNKNOWN"); }
+	return str_make(branch_name);
+}
+
+list_files_recursive :: fn (dirpath: string_view, out: *string) {
+	visitor :: fn (info: *FileVisitInfo, data: *string) Error {
+		ignore :: info.filename.len > 0 && info.filename[0] == '_';
+		if info.is_directory {
+			info.step_into_directory = !ignore;
+			return OK;
+		}
+		if ignore { return OK; }
+		name, ext :: path_splitext(info.filename);
+		sub_extension: string_view;
+		if str_split_by_last(name, '.', null, &sub_extension) && str_match(sub_extension, "test") {
+			return OK;
+		}
+		if str_match(ext, ".bl") {
+			filepath :: tprint("\"%\" ", info.filepath);
+			print("%\n", filepath);
+			str_append(data, filepath);
+		}
+		return OK;
+	};
+
+	err :: visit_files(dirpath, VisitOpt.{ recursive = true }, out, &visitor);
+	if err {
+		panic(err);
+	}
+}
+
+cmd :: fn (fmt: string_view, args: ...) Error {
+	c :: tprint(fmt, args);
+	state :: os_execute(c);
+	if state != 0 {
+		return error(state, "Executed shell command failed '%'!", c);
+	}
+	return OK;
+}
+
+cmd_read_stdout :: fn (fmt: string_view, args: ...) (out: string_view, err: Error) {
+	cmd :: tprint(fmt, args);
+
+	tmp  := str_make(128, application_context.temporary_allocator);
+	pipe :: C.popen(strtoc(cmd), strtoc("r"));
+	defer C.pclose(pipe);
+
+	if !pipe then return "", error("Command '%' failed!", cmd);
+
+	buffer: [128]C.char #noinit;
+	loop C.fgets(auto buffer.ptr, auto buffer.len, pipe) {
+		str_append(&tmp, ctostr(buffer.ptr));
+	}
+
+	if (tmp.len > 0 && tmp[tmp.len - 1] == '\n') {
+		tmp.len -= 1;
+	}
+
+	return tmp, OK;
+}
+
+list_dir :: fn (paths: *[..]string_view, dir: string_view) {
+	VisitData :: struct {
+		paths: *[..]string_view;
+	};
+
+	visitor :: fn (info: *FileVisitInfo, data: *VisitData) Error {
+		if !info.is_directory {
+			_, ext :: path_splitext(info.filepath);
+			if str_match(ext, ".md") {
+				array_push(data.paths, tprint("%", info.filepath));
+			}
+		}
+		return OK;
+	};
+
+	data :: VisitData.{ paths = paths };
+	err :: visit_files(dir, VisitOpt.{}, &data, &visitor);
+	if err {
+		print_err("%", err);
+		return;
+	}
+}
