@@ -113,7 +113,7 @@ META :: meta_reserve(4);
 <p>And finally, we can resolve metadata via the type system as usual, using the type info of the struct.</p>
 
 <pre><code>info :: <span class="syntax-keyword">cast</span>(*TypeInfoStruct) <span class="syntax-keyword">typeinfo</span>(Data);
-    <span class="syntax-keyword">loop</span> i := 0; i &lt; info.members.len; i += 1 <span class="syntax-keyword">{</span>
+<span class="syntax-keyword">loop</span> i := 0; i &lt; info.members.len; i += 1 <span class="syntax-keyword">{</span>
     member :: &info.members[i];
     <span class="syntax-keyword">if</span> member.tag &gt; 0 <span class="syntax-keyword">{</span>
         <span class="syntax-comment">// Here we subtract one!</span>

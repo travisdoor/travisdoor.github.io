@@ -126,7 +126,7 @@ And finally, we can resolve metadata via the type system as usual, using the typ
 
 ```bl
 info :: cast(*TypeInfoStruct) typeinfo(Data);
-	loop i := 0; i < info.members.len; i += 1 {
+loop i := 0; i < info.members.len; i += 1 {
 	member :: &info.members[i];
 	if member.tag > 0 {
 		// Here we subtract one!
