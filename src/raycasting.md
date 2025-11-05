@@ -12,3 +12,4 @@ In this blog post, I’ll try to explain in detail how to implement simple rayca
 
 You can think about it as a laser beam pointing from a point in the game world in some direction, and we somehow want to detect if this beam hits something in the world, and get some information about the hit point.
 
+![](raycast.png)
