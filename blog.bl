@@ -29,11 +29,6 @@ main :: fn () s32 {
 
 	print_info("Running in: '%'", root_dir);
 
-	blc := "blc";
-	#if PLATFORM == Platform.WINDOWS {
-		blc = "blc.exe";
-	}
-
 	src_dir    = sprint("%/%", root_dir, SRC_DIR);
 	side_dir   = sprint("%/%", root_dir, SIDE_DIR);
 
@@ -353,6 +348,16 @@ enter_span :: fn (kind: MD_SPANTYPE, detail: *C.void_ptr, ctx: *Ctx) C.int {
 				str_append(&ctx.content, string_view.{ 1, &link[i] });
 			}
 
+			str_append(&ctx.content, "\">");
+		}
+		MD_SPAN_IMG {
+			img   :: cast(*MD_SPAN_IMG_DETAIL)detail;
+			src   :: string_view.{ auto img.src.size, auto img.src.text };
+			title :: string_view.{ auto img.title.size, auto img.title.text };
+			str_append(&ctx.content, "<img src=\"");
+			str_append(&ctx.content, src);
+			str_append(&ctx.content, "\" alt=\"");
+			str_append(&ctx.content, title);
 			str_append(&ctx.content, "\">");
 		}
 		default;
