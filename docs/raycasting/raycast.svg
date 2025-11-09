@@ -2,80 +2,64 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="44.348949mm"
-   height="36.200382mm"
-   viewBox="0 0 44.348949 36.200382"
+   width="20.265284mm"
+   height="31.646521mm"
+   viewBox="0 0 20.265284 31.646521"
    version="1.1"
    id="svg1"
-   inkscape:export-filename="raycasting-raycast.svg"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm" />
   <defs
      id="defs1">
     <marker
        style="overflow:visible"
-       id="Triangle"
+       id="Dot-0"
        refX="0"
        refY="0"
-       orient="auto-start-reverse"
-       inkscape:stockid="Triangle arrow"
+       orient="auto"
        markerWidth="1"
        markerHeight="1"
        viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:none"
+         d="M 5,0 C 5,2.76 2.76,5 0,5 -2.76,5 -5,2.76 -5,0 c 0,-2.76 2.3,-5 5,-5 2.76,0 5,2.24 5,5 z"
+         id="path17-9" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="Triangle-4"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       markerWidth="1"
+       markerHeight="1"
+       viewBox="0 0 1 1"
        preserveAspectRatio="xMidYMid">
       <path
          transform="scale(0.5)"
          style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
          d="M 5.77,0 -2.88,5 V -5 Z"
-         id="path135" />
+         id="path135-8" />
     </marker>
-    <linearGradient
-       id="swatch6"
-       inkscape:swatch="solid">
-      <stop
-         style="stop-color:#000000;stop-opacity:0;"
-         offset="0"
-         id="stop6" />
-    </linearGradient>
   </defs>
   <g
-     inkscape:label="Vrstva 1"
-     inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-40.95662,-24.47692)">
+     transform="translate(-95.378076,-18.968097)">
     <path
-       style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0.927923;stroke-linecap:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Triangle);paint-order:stroke fill markers"
-       d="M 45.747587,58.736484 82.678226,30.783055"
-       id="path6" />
+       style="fill:none;stroke:#000000;stroke-width:0.451994;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Dot-0);marker-end:url(#Triangle-4)"
+       d="M 96.505095,46.693908 111.774,20.356681"
+       id="path3-4" />
     <path
-       id="path8"
-       style="stroke:#000000;stroke-width:0.927923;stroke-linecap:round;stroke-miterlimit:10;paint-order:stroke fill markers"
-       d="m 47.165086,58.768302 a 1.4450383,1.4450383 0 0 1 -1.445038,1.445039 1.4450383,1.4450383 0 0 1 -1.445038,-1.445039 1.4450383,1.4450383 0 0 1 1.445038,-1.445039 1.4450383,1.4450383 0 0 1 1.445038,1.445039 z" />
-    <path
-       d="m 44.87217,53.874138 q 0,0.581375 -0.199029,1.016097 -0.193792,0.429484 -0.576138,0.670414 -0.382346,0.240931 -0.948008,0.240931 -0.581375,0 -0.968959,-0.240931 -0.382346,-0.24093 -0.5709,-0.675652 -0.188554,-0.434722 -0.188554,-1.016097 0,-0.576138 0.188554,-1.005622 0.188554,-0.429484 0.5709,-0.670415 0.387584,-0.24093 0.974197,-0.24093 0.560424,0 0.94277,0.24093 0.382346,0.235693 0.576138,0.670415 0.199029,0.429484 0.199029,1.01086 z m -2.954014,0 q 0,0.707078 0.298544,1.115612 0.298544,0.403296 0.932295,0.403296 0.638989,0 0.932295,-0.403296 0.293307,-0.408534 0.293307,-1.115612 0,-0.707078 -0.293307,-1.105137 -0.293306,-0.403296 -0.927057,-0.403296 -0.633752,0 -0.937533,0.403296 -0.298544,0.398059 -0.298544,1.105137 z"
-       id="text8"
-       style="font-size:11.2889px;stroke:#000000;stroke-width:0.927923;stroke-linecap:round;stroke-miterlimit:10;paint-order:stroke fill markers"
+       d="m 99.445157,49.446217 q 0,0.352425 -0.12065,0.61595 -0.117475,0.26035 -0.34925,0.4064 -0.231775,0.14605 -0.574675,0.14605 -0.352425,0 -0.587375,-0.14605 -0.231775,-0.14605 -0.346075,-0.409575 -0.1143,-0.263525 -0.1143,-0.61595 0,-0.34925 0.1143,-0.6096 0.1143,-0.26035 0.346075,-0.4064 0.23495,-0.14605 0.59055,-0.14605 0.339725,0 0.5715,0.14605 0.231775,0.142875 0.34925,0.4064 0.12065,0.26035 0.12065,0.612775 z m -1.7907,0 q 0,0.428625 0.180975,0.676275 0.180975,0.244475 0.56515,0.244475 0.38735,0 0.56515,-0.244475 0.1778,-0.24765 0.1778,-0.676275 0,-0.428625 -0.1778,-0.669925 -0.1778,-0.244475 -0.561975,-0.244475 -0.384175,0 -0.568325,0.244475 -0.180975,0.2413 -0.180975,0.669925 z"
+       id="text6"
+       style="font-size:3.175px;line-height:1.25;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        aria-label="O" />
     <path
-       d="m 79.18275,26.774048 q 0,0.948009 -0.518523,1.429869 -0.513285,0.476623 -1.435107,0.476623 h -1.042285 v -3.739657 h 1.152276 q 0.565662,0 0.979432,0.209505 0.413775,0.209505 0.638991,0.618039 0.225216,0.403296 0.225216,1.005621 z m -0.497571,0.01572 q 0,-0.748979 -0.371874,-1.094662 -0.366632,-0.35092 -1.042285,-0.35092 h -0.6128 v 2.933064 h 0.508052 q 1.518907,0 1.518907,-1.487482 z"
-       id="text9"
-       style="font-size:11.2889px;stroke:#000000;stroke-width:0.927923;stroke-linecap:round;stroke-miterlimit:10;paint-order:stroke fill markers"
+       d="m 115.64336,22.21592 q 0,0.574675 -0.31432,0.866775 -0.31115,0.288925 -0.86995,0.288925 h -0.63183 v -2.26695 h 0.6985 q 0.3429,0 0.59373,0.127 0.25082,0.127 0.38735,0.37465 0.13652,0.244475 0.13652,0.6096 z m -0.30162,0.0095 q 0,-0.454025 -0.22543,-0.663575 -0.22225,-0.212725 -0.63182,-0.212725 h -0.37148 v 1.778 h 0.30798 q 0.92075,0 0.92075,-0.9017 z"
+       id="text7"
+       style="font-size:3.175px;line-height:1.25;font-family:Sans;-inkscape-font-specification:'Sans, Normal';letter-spacing:0px;word-spacing:0px;stroke-width:0.264583"
        aria-label="D" />
   </g>
 </svg>

@@ -68,17 +68,20 @@
 <p>As you may have noticed, we divide by <code>N⋅D</code>, but the denominator cannot be 0. As already mentioned, the dot product is zero when the input vectors are perpendicular; this means our raycast is perfectly parallel to our plane and thus never hits it. We have to check this explicitly in the code.</p>
 <p>The final ray vs plane procedure might be implemented like this:</p>
 
-<pre><code>ray_vs_plane :: <span class="syntax-keyword">fn</span> (ray: Ray, p0: v3, n: v3, hit: *Hit) bool <span class="syntax-keyword">{</span>
-    o :: ray.origin;
-    d :: ray.direction;
+<pre><code>ray_vs_plane :: <span class="syntax-keyword">fn</span> (ray: Ray, plane: Plane, hit: *Hit = null) bool <span class="syntax-keyword">{</span>
+    o     :: ray.origin;
+    d     :: ray.direction;
+    p0, n :: get_plane(plane);
 
     denom :: dot(d, n);
     <span class="syntax-keyword">if</span> math.compare(denom, 0.f, EPS) <span class="syntax-keyword">then</span> <span class="syntax-keyword">return</span> false;
 
     t :: dot(n, sub(p0, o)) / denom;
     <span class="syntax-keyword">if</span> t &gt;= ray.t_min && t &lt;= ray.t_max <span class="syntax-keyword">{</span>
-        hit.t = t;
-        hit.n = n;
+        <span class="syntax-keyword">if</span> hit <span class="syntax-keyword">{</span>
+            hit.t = t;
+            hit.n = n;
+        <span class="syntax-keyword">}</span>
         <span class="syntax-keyword">return</span> true;
     <span class="syntax-keyword">}</span>
 
@@ -86,7 +89,9 @@
 <span class="syntax-keyword">}</span>
 </code></pre>
 <h2 id="Ray-vs-Sphere">Ray vs Sphere</h2>
-<p>Similarly, we can find the raycast collision point with a sphere. The whole equation is a bit more complex; however, it applies the same principles. Our sphere is defined as a centre point <code>P0</code> and a radius <code>r</code>. For any point <code>P</code> we can define a sphere as follows:</p>
+<p>Similarly, we can find the raycast collision point with a sphere. The whole equation is a bit more complex; however, it applies the same principles. Our sphere is defined as a center point <code>P0</code> and a radius <code>r</code>.</p>
+<p><img src="raycasting/sphere11.svg" alt=""></p>
+<p>For any point <code>P</code> we can define a sphere as follows:</p>
 <p><img src="raycasting/sphere.svg" alt=""></p>
 <p>Note that <code>||</code> here represents <em>vector magnitude</em>. There is also one simple trick I didn't know, we can represent the squared magnitude of any vector as <em>dot product</em> with itself. Thus, we can do the following to make our computation a bit "easier".</p>
 <p><img src="raycasting/sphere2.svg" alt=""></p>
@@ -108,9 +113,9 @@
 <p>In case the <em>determinant</em> value is zero, the quadratic equation has only one solution, meaning the raycast just touched the sphere at a single point.</p>
 <p>Otherwise, we have to pick <code>t</code> greater than <code>t_min</code> and one closer to the raycast origin.</p>
 <p><img src="raycasting/sphere10.svg" alt=""></p>
-<p>The final ray vs plane procedure might be implemented like this:</p>
+<p>The final ray vs sphere procedure might be implemented like this:</p>
 
-<pre><code>ray_vs_sphere :: <span class="syntax-keyword">fn</span> (ray: Ray, sphere_center: v3, sphere_radius: f32, hit: *Hit) bool <span class="syntax-keyword">{</span>
+<pre><code>ray_vs_sphere :: <span class="syntax-keyword">fn</span> (ray: Ray, sphere_center: v3, sphere_radius: f32, hit: *Hit = null) bool <span class="syntax-keyword">{</span>
     o  :: ray.origin;
     d  :: ray.direction;
     p0 :: sphere_center;
@@ -142,15 +147,104 @@
 
     <span class="syntax-keyword">if</span> t &gt;= ray.t_min && t &lt;= ray.t_max <span class="syntax-keyword">{</span>
         p :: add(o, mul(d, t));
-
-        hit.t = t;
-        hit.n = div(sub(p, p0), r);
+        <span class="syntax-keyword">if</span> hit <span class="syntax-keyword">{</span>
+            hit.t = t;
+            hit.n = div(sub(p, p0), r);
+        <span class="syntax-keyword">}</span>
         <span class="syntax-keyword">return</span> true;
     <span class="syntax-keyword">}</span>
 
     <span class="syntax-keyword">return</span> false;
 <span class="syntax-keyword">}</span>
 </code></pre>
+<h2 id="Ray-vs-Axis-Aligned-Bounding-Box">Ray vs Axis Aligned Bounding Box</h2>
+<p>The Axis-Aligned Bounding Box (AABB) is a common simplification for 3D objects in my game. In some cases, we don't need an exact object representation (triangle mesh), and just a simple bounding box is enough. By bounding box, we mean a box encapsulating the whole object defined as <em>minimum</em> and <em>maximum</em> vectors. Axis-aligned means the box is not rotated (defined in the object's local space).</p>
+<p><img src="raycasting/aabb.svg" alt=""></p>
+<p>While finding the intersection point with raycast, we can, in fact, reuse knowledge we already have. Every AABB consists of six planes (two planes on each axis).  And we already know how to calculate the <code>t</code> value for the ray-plane intersection.</p>
+<p><img src="raycasting/aabb-plane.svg" alt=""></p>
+<p>So the goal here is to calculate <code>t</code> for each plane of the bounding box and pick the closest one to the ray origin. There is one simplification we can do, since our bounding box is axis-aligned, the normals of all planes are also aligned (parallel) to the coordinate system axes. For example, the normal of the left face is parallel to the <em>x</em> axis (x = 1, y = 0, z = 0). So we can simplify the equation by taking into account only non-zero normal components. For the left plane of the bounding box, we can write:</p>
+<p><img src="raycasting/aabb-plane-x.svg" alt=""></p>
+<p>Notice that now we're dealing with scalars, and the equation can be simplified even more:</p>
+<p><img src="raycasting/aabb-plane-x2.svg" alt=""></p>
+<p>Now we can calculate <code>t</code> values for one pair of planes on the <code>x</code> axis (left and right plane) as follows:</p>
+<p><img src="raycasting/aabb-plane-x3.svg" alt=""></p>
+<p>Where a smaller <code>t</code> value is the entry point where the ray enters the box, and a larger <code>t</code> value is the exit point.
+We can now calculate <code>t</code> values for all remaining axes (bottom, top, front, back). Notice, we've separated the intersection test into three independent tests: one for each axis. To get the final result, we need to calculate the intersection of all three <code>t</code> intervals. Plotting these intervals might help us to understand what's going on:</p>
+<p><img src="raycasting/aabb-min-max.svg" alt=""></p>
+<p>Values <code>t_min</code> and <code>t_max</code> are resulting <code>t</code> values we can use to finalise the intersection test.</p>
+<p>When <code>t_min &gt; t_max</code>, we have no overlap in these intervals, meaning the ray misses the box. When <code>t_max &lt; 0</code>, our intersection is "behind" the raycast origin. Otherwise, we take <code>t_min</code> as the result value.</p>
+<p>Example of possible implementation:</p>
+
+<pre><code>ray_vs_aabb :: <span class="syntax-keyword">fn</span> (ray: Ray, aabb_min: v3, aabb_max: v3, hit: *Hit = null) bool <span class="syntax-keyword">{</span>
+    o  :: ray.origin;
+    d  :: ray.direction;
+
+    <span class="syntax-comment">// Inverse direction, so we multiply later instead of dividing.</span>
+    di :: v3.<span class="syntax-keyword">{</span> 1.f / d.x, 1.f / d.y, 1.f / d.z, <span class="syntax-keyword">}</span>;
+
+    t_left   :: (aabb_min.x - o.x) * di.x;
+    t_right  :: (aabb_max.x - o.x) * di.x;
+    t_bottom :: (aabb_min.y - o.y) * di.y;
+    t_top    :: (aabb_max.y - o.y) * di.y;
+    t_front  :: (aabb_min.z - o.z) * di.z;
+    t_back   :: (aabb_max.z - o.z) * di.z;
+
+    <span class="syntax-keyword">using</span> math;
+    t_min_x :: min(t_left,   t_right);
+    t_max_x :: max(t_left,   t_right);
+    t_min_y :: min(t_bottom, t_top);
+    t_max_y :: max(t_bottom, t_top);
+    t_min_z :: min(t_front,  t_back);
+    t_max_z :: max(t_front,  t_back);
+
+    t_min :: max(max(t_min_x, t_min_y), t_min_z);
+    t_max :: min(min(t_max_x, t_max_y), t_max_z);
+
+    <span class="syntax-comment">// if t_min &gt; t_max, ray doesn't intersect AABB.</span>
+    <span class="syntax-keyword">if</span> t_min &gt; t_max <span class="syntax-keyword">then</span> <span class="syntax-keyword">return</span> false;
+    <span class="syntax-comment">// if t_max &lt; 0, ray (line) is intersecting AABB, but the whole AABB is behind us.</span>
+    <span class="syntax-keyword">if</span> t_max &lt; 0.f <span class="syntax-keyword">then</span> <span class="syntax-keyword">return</span> false;
+    <span class="syntax-comment">// Check raycast range.</span>
+    <span class="syntax-keyword">if</span> ray.t_min &gt; t_min || t_min &gt; ray.t_max <span class="syntax-keyword">then</span> <span class="syntax-keyword">return</span> false;
+
+    <span class="syntax-keyword">if</span> hit <span class="syntax-keyword">{</span>
+        hit.t = t_min;
+        <span class="syntax-comment">// Get hit normal.</span>
+        <span class="syntax-keyword">if</span> t_min == t_min_x <span class="syntax-keyword">{</span>
+            hit.n = <span class="syntax-keyword">if</span> t_left &lt; t_right <span class="syntax-keyword">then</span> v3.<span class="syntax-keyword">{</span> x = -1.f <span class="syntax-keyword">}</span> <span class="syntax-keyword">else</span> .<span class="syntax-keyword">{</span> x = 1.f <span class="syntax-keyword">}</span>;
+        <span class="syntax-keyword">}</span> <span class="syntax-keyword">else</span> <span class="syntax-keyword">if</span> t_min == t_min_y <span class="syntax-keyword">{</span>
+            hit.n = <span class="syntax-keyword">if</span> t_bottom &lt; t_top <span class="syntax-keyword">then</span> v3.<span class="syntax-keyword">{</span> y = -1.f <span class="syntax-keyword">}</span> <span class="syntax-keyword">else</span> .<span class="syntax-keyword">{</span> y = 1.f <span class="syntax-keyword">}</span>;
+        <span class="syntax-keyword">}</span> <span class="syntax-keyword">else</span> <span class="syntax-keyword">{</span>
+            hit.n = <span class="syntax-keyword">if</span> t_front &lt; t_back <span class="syntax-keyword">then</span> v3.<span class="syntax-keyword">{</span> z = -1.f <span class="syntax-keyword">}</span> <span class="syntax-keyword">else</span> .<span class="syntax-keyword">{</span> z = 1.f <span class="syntax-keyword">}</span>;
+        <span class="syntax-keyword">}</span>
+    <span class="syntax-keyword">}</span>
+
+    <span class="syntax-keyword">return</span> true;
+<span class="syntax-keyword">}</span>
+</code></pre>
+<h2 id="Ray-vs-Triangle">Ray vs Triangle</h2>
+<p>A fundamental part of the raycast against the triangle mesh is testing the raycast against a single triangle. A triangle is defined simply by 3 vectors (points) in 3D space. There are actually more methods to do this check. Probably the simplest one is checking whether our raycast hits a plane defined by the triangle, and if so, whether the intersection point with that plane lies inside the triangle's area using barycentric coordinates.</p>
+<p>We'll use another approach, the <em>Möller–Trumbore</em> algorithm, which is a bit more compact and gives the desired result right away.</p>
+<p>In this case, I had quite a hard time understanding what was going on. All the following depends on what I remember from high school, and that's really not that much. What is even worse is that these concepts are usually taught as a bunch of memorized rules without any deep knowledge of what's going on. Thus, I forget them very quickly without any chance to refresh them using pure logic. I'll try to describe it as best I can, step by step.</p>
+<p>First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Imagine we have a 2D triangle formed by base axis vectors of size one and a hypotenuse connecting them:</p>
+<p><img src="raycasting/triangle.svg" alt=""></p>
+<p>As you can see, <code>B-A</code> forms the edge vector <code>E1</code>, and <code>C-A=E2</code>. In this case, <code>E1</code> is the same as the <code>x</code> axis, and its length is 1, and <code>E2</code> is the same as the <code>y</code> axis, and its length is also 1. So we can right away tell that <code>E1=[1, 0]</code> and <code>E2=[0, 1]</code>.</p>
+<p>Now, let's ask some questions: what is the position of <code>B</code>? Yes, it's simple, we're on a 2D grid and the position of <code>B</code> is equal to the <code>E1</code> vector. Similarly, for <code>C</code>, the position is equal to the <code>E2</code> vector. But what about point <code>Q</code>? We need to travel some friction of <code>E1</code>, and add some friction of <code>E2</code>. Let's call these frictions <code>u</code> and <code>v</code>.</p>
+<p><img src="raycasting/triangle3.svg" alt=""></p>
+<p>So we have the following:</p>
+<p><img src="raycasting/triangle2.svg" alt=""></p>
+<p>You might ask why we need such a complicated thing for something so obvious. Well, now we have some general properties we can apply to any triangle. All we need is a pair of edge vectors and <code>uv</code> values. There is only one last thing: our triangle might not have point <code>A</code> at the origin, so we need to take this into account by offsetting the whole system by <code>A</code>. So, finally, any point <code>P</code> inside a triangle is defined as follows:</p>
+<p><img src="raycasting/triangle4.svg" alt=""></p>
+<p>We can write the same thing in a matrix form:</p>
+<p><img src="raycasting/triangle5.svg" alt=""></p>
+<p>Another key observation we might have here is that to form a triangle, the sum of our coefficients <code>u</code> and <code>v</code> cannot exceed one. If you look at the previous plot we used, the <code>BC</code> line can be defined as <code>u=1-v</code>, thus in the context of our triangle, we have <code>u+v&lt;=1</code>.</p>
+<p>Since we have a general equation describing a triangle, we can again inject the raycast definition:</p>
+<p><img src="raycasting/triangle6.svg" alt=""></p>
+<h2 id="Sources">Sources</h2>
+<ul>
+<li><a href="https://www.youtube.com/live/fjOdtSu4Lm4?si=qgWHYcV_Co30lcU0">Math for Game Devs [2022, part 1] • Numbers, Vectors & Dot Product - Freya Holmér</a></li>
+<li><a href="https://youtu.be/kYB8IZa5AuE?si=0AB_p4z7D6EJOrlU">Linear transformations and matrices - 3Blue1Brown</a></li>
+</ul>
 </div>
 <div class="column" id="column3">
 <ul id="menu-top-level">
@@ -160,6 +254,9 @@
 <li><a href="#Hit-Point">Hit Point</a></li>
 <li><a href="#Ray-vs-Plane">Ray vs Plane</a></li>
 <li><a href="#Ray-vs-Sphere">Ray vs Sphere</a></li>
+<li><a href="#Ray-vs-Axis-Aligned-Bounding-Box">Ray vs Axis Aligned Bounding Box</a></li>
+<li><a href="#Ray-vs-Triangle">Ray vs Triangle</a></li>
+<li><a href="#Sources">Sources</a></li>
 </ul>
 </ul>
 </div>
