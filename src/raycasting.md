@@ -291,13 +291,13 @@ We'll use another approach, the *Möller–Trumbore* algorithm, which is a bit m
 
 In this case, I had quite a hard time understanding what was going on. All the following depends on what I remember from high school, and that's really not that much. What is even worse is that these concepts are usually taught as a bunch of memorized rules without any deep knowledge of what's going on. Thus, I forget them very quickly without any chance to refresh them using pure logic. I'll try to describe it as best I can, step by step.
 
-First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Imagine we have a 2D triangle formed by base axis vectors of size one and a hypotenuse connecting them:
+First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Say we have a 2D triangle formed by basis axis vectors of size one and a hypotenuse connecting them:
 
 ![](raycasting/triangle.svg)
 
 As you can see, `B-A` forms the edge vector `E1`, and `C-A=E2`. In this case, `E1` is the same as the `x` axis, and its length is 1, and `E2` is the same as the `y` axis, and its length is also 1. So we can right away tell that `E1=[1, 0]` and `E2=[0, 1]`.
 
-Now, let's ask some questions: what is the position of `B`? Yes, it's simple, we're on a 2D grid and the position of `B` is equal to the `E1` vector. Similarly, for `C`, the position is equal to the `E2` vector. But what about point `Q`? We need to travel some friction of `E1`, and add some friction of `E2`. Let's call these frictions `u` and `v`.
+Now, to get to the point `Q`, we need to travel some friction of `E1`, and add some friction of `E2`. Let's call these frictions `u` and `v`.
 
 ![](raycasting/triangle3.svg)
 
@@ -305,7 +305,7 @@ So we have the following:
 
 ![](raycasting/triangle2.svg)
 
-You might ask why we need such a complicated thing for something so obvious. Well, now we have some general properties we can apply to any triangle. All we need is a pair of edge vectors and `uv` values. There is only one last thing: our triangle might not have point `A` at the origin, so we need to take this into account by offsetting the whole system by `A`. So, finally, any point `P` inside a triangle is defined as follows:
+You might ask why we need such a complicated thing for something so obvious. Well, now we have exposed some general properties we can apply to any triangle. All we need is a pair of edge vectors and `uv` values. There is only one last thing: our triangle might not have point `A` at the origin, so we need to take this into account by offsetting the whole system by the `A` vector. So, finally, any point `P` inside a triangle is defined as follows:
 
 ![](raycasting/triangle4.svg)
 
@@ -319,10 +319,27 @@ Since we have a general equation describing a triangle, we can again inject the 
 
 ![](raycasting/triangle6.svg)
 
+Now we deal with the 3x3 linear system.
+
+Let's call our first matrix containing all coefficients `M`, then the `[u, v, t]` vector `x`, and the right side vector `v`. To solve this linear system for `x`, we usually multiply both sides by the inverse matrix of `M`.
+
+![](raycasting/triangle7.svg)
+
+Note that `M` inverse multiplied by `M` does nothing, so we can remove both from the left side.
+
+The problem is that calculating the inverse matrix is a computationally heavy operation, and doing it for every triangle would be wasteful and slow for more complex meshes. Luckily, we can use a shortcut in the form of the *Möller–Trumbore* algorithm.
+
+## Ray vs Triangle Mesh
+
+## Ray Transformation
+
+## Conclusion
+
 ## Sources
 
 * [Math for Game Devs [2022, part 1] • Numbers, Vectors & Dot Product - Freya Holmér](https://www.youtube.com/live/fjOdtSu4Lm4?si=qgWHYcV_Co30lcU0)
 * [Linear transformations and matrices - 3Blue1Brown](https://youtu.be/kYB8IZa5AuE?si=0AB_p4z7D6EJOrlU)
+* [Fast Minimum Storage RayTriangle Intersection](https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf)
 
 
 

@@ -226,24 +226,33 @@ We can now calculate <code>t</code> values for all remaining axes (bottom, top, 
 <p>A fundamental part of the raycast against the triangle mesh is testing the raycast against a single triangle. A triangle is defined simply by 3 vectors (points) in 3D space. There are actually more methods to do this check. Probably the simplest one is checking whether our raycast hits a plane defined by the triangle, and if so, whether the intersection point with that plane lies inside the triangle's area using barycentric coordinates.</p>
 <p>We'll use another approach, the <em>Möller–Trumbore</em> algorithm, which is a bit more compact and gives the desired result right away.</p>
 <p>In this case, I had quite a hard time understanding what was going on. All the following depends on what I remember from high school, and that's really not that much. What is even worse is that these concepts are usually taught as a bunch of memorized rules without any deep knowledge of what's going on. Thus, I forget them very quickly without any chance to refresh them using pure logic. I'll try to describe it as best I can, step by step.</p>
-<p>First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Imagine we have a 2D triangle formed by base axis vectors of size one and a hypotenuse connecting them:</p>
+<p>First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Say we have a 2D triangle formed by basis axis vectors of size one and a hypotenuse connecting them:</p>
 <p><img src="raycasting/triangle.svg" alt=""></p>
 <p>As you can see, <code>B-A</code> forms the edge vector <code>E1</code>, and <code>C-A=E2</code>. In this case, <code>E1</code> is the same as the <code>x</code> axis, and its length is 1, and <code>E2</code> is the same as the <code>y</code> axis, and its length is also 1. So we can right away tell that <code>E1=[1, 0]</code> and <code>E2=[0, 1]</code>.</p>
-<p>Now, let's ask some questions: what is the position of <code>B</code>? Yes, it's simple, we're on a 2D grid and the position of <code>B</code> is equal to the <code>E1</code> vector. Similarly, for <code>C</code>, the position is equal to the <code>E2</code> vector. But what about point <code>Q</code>? We need to travel some friction of <code>E1</code>, and add some friction of <code>E2</code>. Let's call these frictions <code>u</code> and <code>v</code>.</p>
+<p>Now, to get to the point <code>Q</code>, we need to travel some friction of <code>E1</code>, and add some friction of <code>E2</code>. Let's call these frictions <code>u</code> and <code>v</code>.</p>
 <p><img src="raycasting/triangle3.svg" alt=""></p>
 <p>So we have the following:</p>
 <p><img src="raycasting/triangle2.svg" alt=""></p>
-<p>You might ask why we need such a complicated thing for something so obvious. Well, now we have some general properties we can apply to any triangle. All we need is a pair of edge vectors and <code>uv</code> values. There is only one last thing: our triangle might not have point <code>A</code> at the origin, so we need to take this into account by offsetting the whole system by <code>A</code>. So, finally, any point <code>P</code> inside a triangle is defined as follows:</p>
+<p>You might ask why we need such a complicated thing for something so obvious. Well, now we have exposed some general properties we can apply to any triangle. All we need is a pair of edge vectors and <code>uv</code> values. There is only one last thing: our triangle might not have point <code>A</code> at the origin, so we need to take this into account by offsetting the whole system by the <code>A</code> vector. So, finally, any point <code>P</code> inside a triangle is defined as follows:</p>
 <p><img src="raycasting/triangle4.svg" alt=""></p>
 <p>We can write the same thing in a matrix form:</p>
 <p><img src="raycasting/triangle5.svg" alt=""></p>
 <p>Another key observation we might have here is that to form a triangle, the sum of our coefficients <code>u</code> and <code>v</code> cannot exceed one. If you look at the previous plot we used, the <code>BC</code> line can be defined as <code>u=1-v</code>, thus in the context of our triangle, we have <code>u+v&lt;=1</code>.</p>
 <p>Since we have a general equation describing a triangle, we can again inject the raycast definition:</p>
 <p><img src="raycasting/triangle6.svg" alt=""></p>
+<p>Now we deal with the 3x3 linear system.</p>
+<p>Let's call our first matrix containing all coefficients <code>M</code>, then the <code>[u, v, t]</code> vector <code>x</code>, and the right side vector <code>v</code>. To solve this linear system for <code>x</code>, we usually multiply both sides by the inverse matrix of <code>M</code>.</p>
+<p><img src="raycasting/triangle7.svg" alt=""></p>
+<p>Note that <code>M</code> inverse multiplied by <code>M</code> does nothing, so we can remove both from the left side.</p>
+<p>The problem is that calculating the inverse matrix is a computationally heavy operation, and doing it for every triangle would be wasteful and slow for more complex meshes. Luckily, we can use a shortcut in the form of the <em>Möller–Trumbore</em> algorithm.</p>
+<h2 id="Ray-vs-Triangle-Mesh">Ray vs Triangle Mesh</h2>
+<h2 id="Ray-Transformation">Ray Transformation</h2>
+<h2 id="Conclusion">Conclusion</h2>
 <h2 id="Sources">Sources</h2>
 <ul>
 <li><a href="https://www.youtube.com/live/fjOdtSu4Lm4?si=qgWHYcV_Co30lcU0">Math for Game Devs [2022, part 1] • Numbers, Vectors & Dot Product - Freya Holmér</a></li>
 <li><a href="https://youtu.be/kYB8IZa5AuE?si=0AB_p4z7D6EJOrlU">Linear transformations and matrices - 3Blue1Brown</a></li>
+<li><a href="https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf">Fast Minimum Storage RayTriangle Intersection</a></li>
 </ul>
 </div>
 <div class="column" id="column3">
@@ -256,6 +265,9 @@ We can now calculate <code>t</code> values for all remaining axes (bottom, top, 
 <li><a href="#Ray-vs-Sphere">Ray vs Sphere</a></li>
 <li><a href="#Ray-vs-Axis-Aligned-Bounding-Box">Ray vs Axis Aligned Bounding Box</a></li>
 <li><a href="#Ray-vs-Triangle">Ray vs Triangle</a></li>
+<li><a href="#Ray-vs-Triangle-Mesh">Ray vs Triangle Mesh</a></li>
+<li><a href="#Ray-Transformation">Ray Transformation</a></li>
+<li><a href="#Conclusion">Conclusion</a></li>
 <li><a href="#Sources">Sources</a></li>
 </ul>
 </ul>
