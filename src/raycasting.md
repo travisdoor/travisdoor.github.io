@@ -327,7 +327,11 @@ Let's call our first matrix containing all coefficients `M`, then the `[u, v, t]
 
 Note that `M` inverse multiplied by `M` does nothing, so we can remove both from the left side.
 
-The problem is that calculating the inverse matrix is a computationally heavy operation, and doing it for every triangle would be wasteful and slow for more complex meshes. Luckily, we can use a shortcut in the form of the *Möller–Trumbore* algorithm.
+The problem is that computing the inverse matrix is a heavy operation, and doing so for every triangle would be wasteful and slow for more complex meshes. Another option might be using *Cramer's rule*. At this point, I strongly recommend taking a look at 3Blue1Brown's YouTube videos [Essence of linear algebra](https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3). The *Crammer's rule* applied would look like this:
+
+![](raycasting/triangle8.svg)
+
+Luckily, we can use a shortcut in the form of the *Möller–Trumbore* algorithm.
 
 ## Ray vs Triangle Mesh
 
@@ -338,8 +342,8 @@ The problem is that calculating the inverse matrix is a computationally heavy op
 ## Sources
 
 * [Math for Game Devs [2022, part 1] • Numbers, Vectors & Dot Product - Freya Holmér](https://www.youtube.com/live/fjOdtSu4Lm4?si=qgWHYcV_Co30lcU0)
-* [Linear transformations and matrices - 3Blue1Brown](https://youtu.be/kYB8IZa5AuE?si=0AB_p4z7D6EJOrlU)
-* [Fast Minimum Storage RayTriangle Intersection](https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf)
+* [Essence of linear algebra - 3Blue1Brown](https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3)
+* [Fast Minimum Storage Ray-Triangle Intersection](https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf)
 
 
 

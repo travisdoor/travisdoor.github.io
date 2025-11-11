@@ -23,3 +23,61 @@ b = 2D\cdot (O-P_0)\\
 c = (O-P_0)\cdot (O-P_0)-r^2\\
 \\
 t=\frac{-b\pm\sqrt{b^2-4ac}}{2a}
+
+
+
+x=\frac
+{
+det
+\begin{bmatrix}
+(O_x-A_x)& E_{2x} & -D_x\\
+(O_y-A_y) & E_{2y} & -D_y\\
+(O_z-A_z) & E_{2z} & -D_z\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1x} & E_{2x} & -D_x\\
+E_{1y} & E_{2y} & -D_y\\
+E_{1z} & E_{2z} & -D_z\\
+\end{bmatrix}
+}
+\\
+\\
+y=\frac
+{
+det
+\begin{bmatrix}
+E_{1x} & (O_x-A_x) & -D_x\\
+E_{1y} & (O_y-A_y)  & -D_y\\
+E_{1z} & (O_z-A_z) & -D_z\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1x} & E_{2x} & -D_x\\
+E_{1y} & E_{2y} & -D_y\\
+E_{1z} & E_{2z} & -D_z\\
+\end{bmatrix}
+}
+\\
+\\
+z=\frac
+{
+det
+\begin{bmatrix}
+E_{1x} & E_{2x} & (O_x-A_x)\\
+E_{1y} & E_{2y} & (O_y-A_y)\\
+E_{1z} & E_{2z} & (O_z-A_z)\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1x} & E_{2x} & -D_x\\
+E_{1y} & E_{2y} & -D_y\\
+E_{1z} & E_{2z} & -D_z\\
+\end{bmatrix}
+}
