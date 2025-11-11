@@ -246,6 +246,8 @@ We can now calculate <code>t</code> values for all remaining axes (bottom, top, 
 <p>Note that <code>M</code> inverse multiplied by <code>M</code> does nothing, so we can remove both from the left side.</p>
 <p>The problem is that computing the inverse matrix is a heavy operation, and doing so for every triangle would be wasteful and slow for more complex meshes. Another option might be using <em>Cramer's rule</em>. At this point, I strongly recommend taking a look at 3Blue1Brown's YouTube videos <a href="https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3">Essence of linear algebra</a>. The <em>Crammer's rule</em> applied would look like this:</p>
 <p><img src="raycasting/triangle8.svg" alt=""></p>
+<p>Or in more compact form:</p>
+<p><img src="raycasting/triangle9.svg" alt=""></p>
 <p>Luckily, we can use a shortcut in the form of the <em>Möller–Trumbore</em> algorithm.</p>
 <h2 id="Ray-vs-Triangle-Mesh">Ray vs Triangle Mesh</h2>
 <h2 id="Ray-Transformation">Ray Transformation</h2>

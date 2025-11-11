@@ -331,6 +331,10 @@ The problem is that computing the inverse matrix is a heavy operation, and doing
 
 ![](raycasting/triangle8.svg)
 
+Or in more compact form:
+
+![](raycasting/triangle9.svg)
+
 Luckily, we can use a shortcut in the form of the *Möller–Trumbore* algorithm.
 
 ## Ray vs Triangle Mesh
