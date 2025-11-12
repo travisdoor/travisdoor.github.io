@@ -361,12 +361,6 @@ At this point, we have all we need to proceed to the implementation. Maybe one l
 ```bl
 ```
 
-## Ray vs Triangle Mesh
-
-## Ray Transformation
-
-## Conclusion
-
 ## Sources
 
 * [Math for Game Devs [2022, part 1] • Numbers, Vectors & Dot Product - Freya Holmér](https://www.youtube.com/live/fjOdtSu4Lm4?si=qgWHYcV_Co30lcU0)
@@ -374,5 +368,4 @@ At this point, we have all we need to proceed to the implementation. Maybe one l
 * [Fast Minimum Storage Ray-Triangle Intersection](https://cadxfem.org/inf/Fast%20MinimumStorage%20RayTriangle%20Intersection.pdf)
 
 
-
-
+*Martin Dorazil 12-11-2025*
