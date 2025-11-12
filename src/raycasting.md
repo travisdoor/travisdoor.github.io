@@ -355,6 +355,10 @@ And the rest:
 
 ![](raycasting/triangle13.svg)
 
+So finally:
+
+![](raycasting/triangle14.svg)
+
 At this point, we have all we need to proceed to the implementation. Maybe one last important note about the denominator *determinant*. We need to reject values close to 0, which means the ray is parallel to the triangle plane. By accepting negative and/or positive values of *determinant*, we can allow hits on the triangle's back face, front face, or both sides.
  
 
