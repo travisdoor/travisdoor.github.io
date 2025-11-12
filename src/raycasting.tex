@@ -26,7 +26,7 @@ t=\frac{-b\pm\sqrt{b^2-4ac}}{2a}
 
 
 
-x=\frac
+u=\frac
 {
 det
 \begin{bmatrix}
@@ -45,7 +45,7 @@ E_{1z} & E_{2z} & -D_z\\
 }
 \\
 \\
-y=\frac
+v=\frac
 {
 det
 \begin{bmatrix}
@@ -64,7 +64,7 @@ E_{1z} & E_{2z} & -D_z\\
 }
 \\
 \\
-z=\frac
+t=\frac
 {
 det
 \begin{bmatrix}
@@ -81,3 +81,64 @@ E_{1y} & E_{2y} & -D_y\\
 E_{1z} & E_{2z} & -D_z\\
 \end{bmatrix}
 }
+
+u=\frac
+{
+det
+\begin{bmatrix}
+(O-A)& E_{2} & -D\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1} & E_{2} & -D\\
+\end{bmatrix}
+}
+\\
+\\
+v=\frac
+{
+det
+\begin{bmatrix}
+E_{1} & (O-A) & -D\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1} & E_{2} & -D\\
+\end{bmatrix}
+}
+\\
+\\
+t=\frac
+{
+det
+\begin{bmatrix}
+E_{1} & E_{2} & (O-A)\\
+\end{bmatrix}
+}
+{
+det
+\begin{bmatrix}
+E_{1} & E_{2} & -D\\
+\end{bmatrix}
+}
+
+T=O-A\\
+det\begin{bmatrix}
+T&E_2&-D\\
+\end{bmatrix}
+=
+T\cdot (D\times E_2)\\
+det\begin{bmatrix}
+E_1&T&-D\\
+\end{bmatrix}
+=
+E_1\cdot (D\times T)\\
+det\begin{bmatrix}
+E_1&E_2&T\\
+\end{bmatrix}
+=
+E_1\cdot(E_2\times T)

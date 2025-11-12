@@ -8,6 +8,8 @@ The usual solution would be to cast a ray from the player/camera position into t
 
 In this blog post, I’ll try to explain in detail how to implement simple raycasting, focusing on the practical side, and do a little bit of math in a way even I’m able to understand (I’m not really into math).
 
+Before we start, take a look at [Essence of linear algebra](https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3) by 3Blue1Brown in case you're not so familiar with linear algebra like me.
+
 ## What is raycast?
 
 You can think about it as a laser beam pointing from a point in the game world in some direction, and we somehow want to detect if this beam hits something in the world, and get some information about the hit point. So let's define our raycast as origin point `O` and normalized direction vector `D`.
@@ -335,7 +337,29 @@ Or in more compact form:
 
 ![](raycasting/triangle9.svg)
 
-Luckily, we can use a shortcut in the form of the *Möller–Trumbore* algorithm.
+We use *determinants* to compute our unknown coefficients. As a reminder, *determinant* (in our case) is a signed volume of [parallelepiped](https://en.wikipedia.org/wiki/Parallelepiped) created from vectors in a 3x3 matrix. We can calculate one using the following generalized formula:
+
+![](raycasting/triangle10.svg)
+
+This can be surprisingly intuitive; the cross product `×` here returns a new vector perpendicular to both input vectors, and its length is equal to the area of the [parallelogram](https://en.wikipedia.org/wiki/Parallelogram) shaped by these two vectors. Then we use the dot product to project the third vector onto a perpendicular vector and scale its length by the length of the projected vector; essentially calculating the volume of the parallelepiped.
+
+Then there are the following properties of the cross product we'll use:
+
+![](raycasting/triangle11.svg)
+
+To solve all the coefficients, we need to calculate four determinants. Let's start with the one used three times:
+
+![](raycasting/triangle12.svg)
+
+And the rest:
+
+![](raycasting/triangle13.svg)
+
+At this point, we have all we need to proceed to the implementation. Maybe one last important note about the denominator *determinant*. We need to reject values close to 0, which means the ray is parallel to the triangle plane. By accepting negative and/or positive values of *determinant*, we can allow hits on the triangle's back face, front face, or both sides.
+ 
+
+```bl
+```
 
 ## Ray vs Triangle Mesh
 
