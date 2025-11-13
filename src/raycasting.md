@@ -8,7 +8,7 @@ The usual solution would be to cast a ray from the player/camera position into t
 
 In this blog post, I’ll try to explain in detail how to implement simple raycasting, focusing on the practical side, and do a little bit of math in a way even I’m able to understand (I’m not really into math).
 
-Before we start, take a look at [Essence of linear algebra](https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3) by 3Blue1Brown in case you're not so familiar with linear algebra like me.
+Before we start, take a look at [Essence of linear algebra](https://youtu.be/fNk_zzaMoSs?si=ZZEUTqkO57HP-ie3) by **3Blue1Brown** in case you're not so familiar with linear algebra like me.
 
 ## What is raycast?
 
@@ -16,7 +16,7 @@ You can think about it as a laser beam pointing from a point in the game world i
 
 ![](raycasting/raycast.svg)
 
-Such a definition of raycast on its own is not enough. We also need to control where we are on this oriented line. Since the direction vector is normalized, we can just multiply it by a scalar, usually called `t` to control how far from the origin we are. Note that when the direction vector is normalized, `t` is actually in world units. So to get, for example, point `P` two units far from the origin in the direction `D` we do `P=O+2D`. 
+Such a definition of raycast on its own is not enough. We also need to control where we are on this oriented line. Since the direction vector is normalized, we can just multiply it by a scalar, usually called `t`, to control how far from the origin we are. Note that when the direction vector is normalized, `t` is actually in world units. So to get, for example, point `P` two units far from the origin in the direction `D`, we do `P=O+2D`. 
 
 This brings us to the general definition of our raycast:
 
@@ -35,9 +35,11 @@ Ray :: struct {
 }
 ```
 
+You might wonder where the `t` value is. This is actually the value we want to get from following intersection checks. Ray is the input, and `t` value is the desired output. In fact, we might want to include more information about the intersection point or *hit point*.
+
 ## Hit Point
 
-By hit point, we mean the exact intersection point of our raycast and the object in the scene. In other words, we're trying to find one point lying on the raycast and geometry at the same time. Based on the raycast definition, we're looking for `t` value of such a point.
+By hit point, we mean the exact intersection point of our raycast and the object in the scene. In other words, we're trying to find one point lying on both the raycast and geometry. Based on the raycast definition, we're looking for the `t` value of such a point.
 
 To store collected information about the hit point, I use the following structure:
 
@@ -49,7 +51,7 @@ Hit :: struct {
 }
 ```
 
-Where `id` is a unique identifier of the hit object, `t` value and hit surface normal `n`. You can include any other information needed.
+Where `id` is a unique identifier of the hit object, `t` value, and the hit surface normal `n`. You can include any other information needed.
 
 As you can imagine, calculating the intersection of our ray with a full model triangle geometry might be too complex to start with, so let's take a look at the simplest case possible first.
 
@@ -359,10 +361,46 @@ So finally:
 
 ![](raycasting/triangle14.svg)
 
-At this point, we have all we need to proceed to the implementation. Maybe one last important note about the denominator *determinant*. We need to reject values close to 0, which means the ray is parallel to the triangle plane. By accepting negative and/or positive values of *determinant*, we can allow hits on the triangle's back face, front face, or both sides.
+At this point, we have all we need to proceed to the implementation. Maybe one last important note about the `q` *determinant*. We must reject values close to 0, which means the ray is parallel to the triangle plane. By accepting negative and/or positive values of *determinant*, we can allow hits on the triangle's back face, front face, or both.
  
 
 ```bl
+ray_vs_triangle :: fn (ray: Ray, a: v3, b: v3, c: v3, hit: *Hit = null) bool {
+	o  :: ray.origin;
+	d  :: ray.direction;
+	e1 :: sub(b, a);
+	e2 :: sub(c, a);
+	cde2 :: cross(d, e2);
+	q :: dot(e1, cde2);
+	if math.abs(q) < EPS {
+		// Ray is parallel to the triangle.
+		return false;
+	}
+
+	iq :: 1.f/q;
+	T :: sub(o, a);
+
+	u :: dot(T, cde2) * iq;
+	if u < 0.f || u > 1.f then return false;
+
+	v :: dot(e1, cross(d, T)) * iq;
+	if v < 0.f || u+v > 1.f then return false;
+
+	t :: dot(e1, cross(e2, T)) * iq;
+	if t < ray.t_min || t > ray.t_max then return false;
+
+	if hit {
+		hit.t = t;
+		if q < 0.f {
+			// Backside hit.
+			hit.n = normalize(cross(e2, e1));
+		} else {
+			hit.n = normalize(cross(e1, e2));
+		}
+	}
+
+	return true;
+}
 ```
 
 ## Sources
