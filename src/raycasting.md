@@ -289,11 +289,9 @@ ray_vs_aabb :: fn (ray: Ray, aabb_min: v3, aabb_max: v3, hit: *Hit = null) bool 
 
 ## Ray vs Triangle
 
-A fundamental part of the raycast against the triangle mesh is testing the raycast against a single triangle. A triangle is defined simply by 3 vectors (points) in 3D space. There are actually more methods to do this check. Probably the simplest one is checking whether our raycast hits a plane defined by the triangle, and if so, whether the intersection point with that plane lies inside the triangle's area using barycentric coordinates.
+A fundamental part of the raycast against the triangle mesh is testing the raycast against a single triangle.
 
-We'll use another approach, the *Möller–Trumbore* algorithm, which is a bit more compact and gives the desired result right away.
-
-In this case, I had quite a hard time understanding what was going on. All the following depends on what I remember from high school, and that's really not that much. What is even worse is that these concepts are usually taught as a bunch of memorized rules without any deep knowledge of what's going on. Thus, I forget them very quickly without any chance to refresh them using pure logic. I'll try to describe it as best I can, step by step.
+In this case, I had quite a hard time understanding what was going on. All the following depends on what I remember from high school, and that's really not that much. What is even worse is that these concepts are usually taught as a bunch of memorized rules without any deep knowledge. Thus, I forget them very quickly without any chance to refresh them using pure logic. I'll try to describe it as best I can, step by step.
 
 First, we need a mathematical way to describe the input triangle and all points it might contain. Each triangle in a triangle mesh is usually stored as a set of 3 vertices. So let's start there. We have a triangle defined by 3 points A, B, and C. Before we begin, let's take a look at some simple cases first. Say we have a 2D triangle formed by basis axis vectors of size one and a hypotenuse connecting them:
 
